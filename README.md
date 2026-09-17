@@ -1,34 +1,15 @@
-# The phenomenon
-
-<!-- This is the SD5913 assignment 2 template. Everything in this file is yours to
-replace, and the check counts words: comments like this one are not words, so
-delete each one as you write. Start with the heading: name the phenomenon.
-
-Then, in this order, at least 150 words in total.
-
-New to folders, paths, or the files here whose names start with a dot? Read
-https://github.com/sd5913/pfad/blob/2026/reference/files.md first. Ten minutes. -->
-
-![what the picture is](out/plot.png)
+# 2025 Pacific Typhoon Season Analysis
 
 ## The phenomenon
-
-<!-- What goes up and down, and why you looked at it. -->
+This project analyzes the **2025 Pacific Typhoon Season**, focusing on the physical relationship between the peak wind speeds and the central barometric pressures of tropical cyclones recorded throughout the season.
 
 ## The source
-
-<!-- A link to the page or endpoint the file came from, and one line on what is in
-the file: how many rows, what a row means, what the units are. -->
+The raw data is fetched directly from the Wikipedia page for the **2025 Pacific typhoon season**, saved locally as an immutable HTML file to ensure full reproducibility without requiring live network access:
+- **Source URL**: `https://en.wikipedia.org/wiki/2025_Pacific_typhoon_season`
+- **Local Storage**: `data/typhoons-2025.html`
 
 ## What the picture shows
+The generated scatter plot (`out/plot.png`) visualizes 36 valid data points extracted from the season's storm tables. It maps **Central Pressure (hPa)** against **Peak Wind Speed (km/h)**. 
 
-<!-- Two or three sentences. Including what it hides: every transformation throws
-something away, and naming what yours threw away is the easiest way to sound like
-you know what you did. -->
-
-## Run it
-
-```
-uv run fetch.py
-uv run plot.py
-```
+- **What it shows**: The expected inverse physical correlation—lower central barometric pressure (indicating a more intense storm) generally corresponds to higher peak wind speeds.
+- **What it hides**: It hides individual storm trajectories, geographical locations, lifespan durations, and temporal sequencing (when each storm occurred during the season).
