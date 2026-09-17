@@ -13,3 +13,5 @@ The generated scatter plot (`out/plot.png`) visualizes 36 valid data points extr
 
 - **What it shows**: The expected inverse physical correlation—lower central barometric pressure (indicating a more intense storm) generally corresponds to higher peak wind speeds.
 - **What it hides**: It hides individual storm trajectories, geographical locations, lifespan durations, and temporal sequencing (when each storm occurred during the season).
+
+- ![Pacific Typhoon Season Scatter Plot](out/plot.png)
