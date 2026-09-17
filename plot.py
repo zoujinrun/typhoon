@@ -1,67 +1,79 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["matplotlib"]
+# dependencies = ["matplotlib", "beautifulsoup4"]
 # ///
 
 """
-Read the file in data/, make one picture, save it to out/.
-
-    uv run plot.py
-
-Three parts, and you will replace all three: rows() reads the file the way *your*
-file needs reading, the loop in main() picks the numbers out of it, and the plot at
-the bottom is the transformation you chose. Print before you plot.
+Parse the saved Wikipedia HTML and plot typhoon wind speed vs. central pressure.
 """
 
-import csv
+import re
 from pathlib import Path
-
 import matplotlib.pyplot as plt
-
-FILE = "hko-daily-mean-temperature-2026.csv"   # CHANGE ME: the same name as in fetch.py
-PICTURE = "plot.png"                           # what goes into out/, and into the README
+from bs4 import BeautifulSoup
 
 HERE = Path(__file__).parent
-DATA = HERE / "data" / FILE
+DATA = HERE / "data"
 OUT = HERE / "out"
+OUT.mkdir(exist_ok=True)
 
+SOURCE = DATA / "typhoons-2025.html"
 
-def rows(path):
-    """The file as a list of lists, one per line. The Observatory puts three lines
-    of titles above the table and a legend below it, so keep only the lines that
-    start with a year."""
-    kept = []
-    with path.open(encoding="utf-8-sig", newline="") as handle:
-        for line in csv.reader(handle):
-            if line and line[0].isdigit():
-                kept.append(line)
-    return kept
-
+def extract_number(text, unit):
+    """从文本中提取出指定单位前的数字，例如 '215 km/h' -> 215.0"""
+    if not text:
+        return None
+    match = re.search(r'([\d,]+\.?\d*)\s*' + unit, text)
+    if match:
+        try:
+            return float(match.group(1).replace(',', ''))
+        except ValueError:
+            return None
+    return None
 
 def main():
-    table = rows(DATA)
-    print(f"{DATA.name}: {len(table)} rows. The first one: {table[0]}")
+    if not SOURCE.exists():
+        raise FileNotFoundError(f"Missing source file {SOURCE.relative_to(HERE)}. Run fetch.py first.")
 
-    days, values = [], []
-    for i, (year, month, day, value, quality) in enumerate(table):   # the loop over the numbers
-        if value == "***":                   # the Observatory's word for "missing"
+    html = SOURCE.read_text(encoding="utf-8")
+    soup = BeautifulSoup(html, "html.parser")
+
+    wind_speeds = []
+    pressures = []
+
+    # 遍历维基百科表格中的每一行
+    for row in soup.select("table.wikitable.sortable tr"):
+        cells = row.find_all(["th", "td"])
+        if len(cells) < 6:
             continue
-        days.append(i + 1)
-        values.append(float(value))          # it arrived as text; make it a number
-    print(f"{len(values)} values, from {min(values)} to {max(values)}")
+        
+        # 假设风速和气压在特定的列（根据维基百科表格结构调整，通常风速在某列，气压在另一列）
+        # 这里我们遍历单元格尝试提取数值
+        row_text = " ".join([cell.get_text(strip=True) for cell in cells])
+        
+        speed = extract_number(row_text, "km/h")
+        pressure = extract_number(row_text, "hPa")
 
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(days, values, color="#d6591d", linewidth=1.5)
-    ax.set_xlabel("day of 2026")
-    ax.set_ylabel("daily mean temperature, °C")
-    ax.set_title("Hong Kong Observatory, 2026 so far")
-    fig.tight_layout()
+        if speed and pressure:
+            wind_speeds.append(speed)
+            pressures.append(pressure)
 
-    OUT.mkdir(exist_ok=True)
-    fig.savefig(OUT / PICTURE, dpi=150)
-    print(f"saved out/{PICTURE}")
+    print(f"Extracted {len(wind_speeds)} valid typhoon data points.")
+
+    # 画散点图：气压 vs 风速
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(pressures, wind_speeds, color="#d6591d", alpha=0.7, edgecolors="none")
+    
+    ax.set_title("2025 Pacific Typhoons: Pressure vs. Wind Speed", fontsize=11)
+    ax.set_xlabel("Central Pressure (hPa)")
+    ax.set_ylabel("Peak Wind Speed (km/h)")
+    ax.grid(True, linestyle="--", alpha=0.5)
+
+    target = OUT / "plot.png"
+    fig.savefig(target, dpi=150, bbox_inches="tight")
+    print(f"Wrote {target.relative_to(HERE)}")
+    
     plt.show()
-
 
 if __name__ == "__main__":
     main()
