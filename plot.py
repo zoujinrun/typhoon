@@ -4,7 +4,8 @@
 # ///
 
 """
-Parse the saved Wikipedia HTML and plot typhoon wind speed vs. central pressure.
+Parse saved Wikipedia HTML and plot typhoon wind speed vs. central pressure,
+color-coded by chronological order (time progression through the season).
 """
 
 import re
@@ -47,8 +48,6 @@ def main():
         if len(cells) < 6:
             continue
         
-        # 假设风速和气压在特定的列（根据维基百科表格结构调整，通常风速在某列，气压在另一列）
-        # 这里我们遍历单元格尝试提取数值
         row_text = " ".join([cell.get_text(strip=True) for cell in cells])
         
         speed = extract_number(row_text, "km/h")
@@ -59,15 +58,35 @@ def main():
             pressures.append(pressure)
 
     print(f"Extracted {len(wind_speeds)} valid typhoon data points.")
-
-    # 画散点图：气压 vs 风速
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.scatter(pressures, wind_speeds, color="#d6591d", alpha=0.7, edgecolors="none")
     
-    ax.set_title("2025 Pacific Typhoons: Pressure vs. Wind Speed", fontsize=11)
-    ax.set_xlabel("Central Pressure (hPa)")
-    ax.set_ylabel("Peak Wind Speed (km/h)")
-    ax.grid(True, linestyle="--", alpha=0.5)
+    if not wind_speeds:
+        print("Warning: No data points found. Please check the HTML table structure.")
+        return
+
+    # 打印一些基础统计洞察
+    print(f"-> 本季记录到的最高风速: {max(wind_speeds)} km/h")
+    print(f"-> 本季记录到的最低气压: {min(pressures)} hPa")
+
+    # 画散点图：气压 vs 风速（按时间顺序用渐变色展示）
+    fig, ax = plt.subplots(figsize=(7, 6))
+    
+    # 用数据出现的先后顺序（索引）作为时间演变轴
+    time_sequence = range(len(wind_speeds))
+    
+    scatter = ax.scatter(
+        pressures, wind_speeds, 
+        c=time_sequence, cmap="plasma", 
+        s=60, alpha=0.85, edgecolors="none"
+    )
+    
+    # 添加颜色条（已修复转义字符问题）
+    cbar = plt.colorbar(scatter)
+    cbar.set_label("Season Progression (Early -> Late)", fontsize=10)
+
+    ax.set_title("2025 Pacific Typhoons: Pressure vs. Wind Speed", fontsize=12, pad=12)
+    ax.set_xlabel("Central Pressure (hPa)", fontsize=10)
+    ax.set_ylabel("Peak Wind Speed (km/h)", fontsize=10)
+    ax.grid(True, linestyle="--", alpha=0.4)
 
     target = OUT / "plot.png"
     fig.savefig(target, dpi=150, bbox_inches="tight")
